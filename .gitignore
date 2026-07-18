@@ -1,0 +1,37 @@
+# ── Copyrighted / game content — NEVER commit (see CONTENT_POLICY.md) ─────────
+*.psarc
+*.PSARC
+*.sng
+*.dds
+*.bnk
+*.wem
+*.pck
+*.hsan
+*.hson
+*.ogg
+*.oga
+*.opus
+*.mp3
+*.wav
+*.flac
+*.m4a
+*.feedpak
+*.sloppak
+# real album art (synthetic fixtures build 1x1 PNGs in memory)
+*.jpg
+*.jpeg
+*.webp
+*.png
+
+# ── Build / env ───────────────────────────────────────────────────────────────
+build/
+dist/
+*.egg-info/
+__pycache__/
+.venv/
+venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+out/
+tmp/

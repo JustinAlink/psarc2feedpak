@@ -1,0 +1,51 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install ruff mypy
+      - run: ruff check src tests
+      - run: ruff format --check src tests
+      - run: mypy src || true   # advisory until types are filled in
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "${{ matrix.python-version }}" }
+      - run: pip install -e .[dev]
+      - run: pytest -q
+
+  no-binary-content:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Reject forbidden content
+        run: |
+          set -euo pipefail
+          # 1) forbidden extensions among tracked files = hard fail
+          if git ls-files | grep -iE '\.(psarc|sng|ogg|oga|mp3|wav|flac|m4a|opus|wem|bnk|pck|dds|hsan|hson|feedpak|sloppak)$'; then
+            echo "::error::Forbidden content committed. See CONTENT_POLICY.md"; exit 1
+          fi
+          # 2) any tracked binary over 64 KiB = fail (fixtures are tiny)
+          large=$(git ls-files | while read -r f; do
+                    sz=$(wc -c < "$f")
+                    if [ "$sz" -gt 65536 ] && file --mime "$f" | grep -q 'charset=binary'; then
+                      echo "$f ($sz)"
+                    fi
+                  done)
+          if [ -n "$large" ]; then echo "::error::Large tracked binary:"; echo "$large"; exit 1; fi

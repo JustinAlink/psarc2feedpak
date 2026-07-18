@@ -1,0 +1,36 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "psarc2feedpak"
+version = "0.1.0"
+description = "Convert PSARC archives you own into the open .feedpak interoperability format."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "AGPL-3.0-only"
+keywords = ["psarc", "feedpak", "converter", "interoperability", "archive"]
+dependencies = ["PyYAML>=6.0"]
+
+[project.urls]
+Homepage = "https://github.com/JustinAlink/psarc2feedpak"
+"Content Policy" = "https://github.com/JustinAlink/psarc2feedpak/blob/main/CONTENT_POLICY.md"
+
+[project.scripts]
+psarc2feedpak = "psarc2feedpak.cli:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.4", "mypy>=1.10"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py310"
+
+[tool.mypy]
+python_version = "3.10"
+packages = ["psarc2feedpak"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/psarc2feedpak"]
