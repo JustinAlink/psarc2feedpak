@@ -68,47 +68,63 @@ def _guide_unpack(path: Path) -> int:
     return 2
 
 
-def _convert(
-    project_dir: Path, out_dir: Path, *, legacy_ext: bool, dry_run: bool
-) -> int:
-    """Convert an unpacked arrangement folder → .feedpak."""
+def _convert(input_dir: Path, out_dir: Path, *, legacy_ext: bool, dry_run: bool) -> int:
+    """Convert one unpacked arrangement, or every project under a parent folder."""
     from psarc2feedpak.audio.normalize import WemConversionError
-    from psarc2feedpak.convert.pipeline import ConversionError, convert
+    from psarc2feedpak.convert.pipeline import ConversionError, convert_any
+
+    def _progress(i: int, total: int, name: str) -> None:
+        print(f"  [{i + 1}/{total}] {name}")
 
     try:
-        result = convert(project_dir, out_dir, legacy_ext=legacy_ext, dry_run=dry_run)
+        summary = convert_any(
+            input_dir,
+            out_dir,
+            legacy_ext=legacy_ext,
+            dry_run=dry_run,
+            on_progress=None if dry_run else _progress,
+        )
     except (ConversionError, WemConversionError) as exc:
         print(f"psarc2feedpak: {exc}", file=sys.stderr)
         return 1
 
+    converted, failed = summary["converted"], summary["failed"]
+
     if dry_run:
-        print(f"[dry-run] would write: {result['would_write']}")
+        for r in converted:
+            print(f"[dry-run] {r['title']!r} ({r['duration']}s) -> {r['would_write']}")
+        return 0
+
+    if summary["mode"] == "single":
+        r = converted[0]
+        print(f"wrote {r['pak']}")
         print(
-            f"  title={result['title']!r}  duration={result['duration']}s  "
-            f"arrangements={', '.join(result['arrangements'])}"
+            f"  {r['title']!r} — {r['artist']!r}  ({r['duration']}s)  "
+            f"arrangements: {', '.join(a['id'] for a in r['arrangements'])}  "
+            f"cover: {'yes' if r['cover'] else 'no'}"
         )
         return 0
 
-    print(f"wrote {result['pak']}")
-    print(f"  {result['title']!r} — {result['artist']!r}  ({result['duration']}s)")
-    print(
-        f"  arrangements: {', '.join(a['id'] for a in result['arrangements'])}"
-        f"  cover: {'yes' if result['cover'] else 'no'}"
-    )
-    return 0
+    tail = f", {len(failed)} failed:" if failed else ""
+    print(f"\nBatch: {len(converted)}/{summary['total']} converted{tail}")
+    for f in failed:
+        print(f"  ✗ {f['name']}: {f['error']}", file=sys.stderr)
+    return 1 if failed and not converted else 0
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="psarc2feedpak",
         description=(
-            "Convert an UNPACKED arrangement you own into the open .feedpak format."
+            "Convert an UNPACKED arrangement — or a whole folder of them — you own "
+            "into the open .feedpak format."
         ),
     )
     parser.add_argument(
         "input",
         type=Path,
-        help="an UNPACKED arrangement folder (or a .psarc, which is explained, not decrypted)",
+        help="an unpacked arrangement folder, OR a parent folder of them (batch); "
+        "a raw .psarc is explained, not decrypted",
     )
     parser.add_argument(
         "-o",

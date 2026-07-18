@@ -23,7 +23,7 @@ from pathlib import Path
 
 from psarc2feedpak.audio.normalize import wem_to_ogg
 
-__all__ = ["convert", "validate", "ConversionError"]
+__all__ = ["convert", "convert_any", "batch_convert", "validate", "ConversionError"]
 
 FEEDPAK_VERSION = "1.2.0"
 
@@ -324,3 +324,72 @@ def validate(pak: Path) -> dict:
     with tempfile.TemporaryDirectory() as cache:
         loaded = sloppak.load_song(pak.name, pak.parent, Path(cache))
     return {"meta": meta, "loaded": loaded}
+
+
+# ── batch ────────────────────────────────────────────────────────────────────
+def _find_projects(parent: Path) -> list[Path]:
+    """Immediate subfolders of ``parent`` that are unpacked arrangement projects."""
+    if not parent.is_dir():
+        return []
+    return [
+        d for d in sorted(parent.iterdir()) if d.is_dir() and _discover_arrangements(d)
+    ]
+
+
+def batch_convert(
+    projects,
+    out_dir,
+    *,
+    legacy_ext: bool = False,
+    dry_run: bool = False,
+    on_progress=None,
+) -> dict:
+    """Convert a list of unpacked project folders. Never aborts on one bad song —
+    failures are collected and returned. ``on_progress(index, total, name)`` is
+    called before each conversion."""
+    projects = [Path(p) for p in projects]
+    total = len(projects)
+    converted: list[dict] = []
+    failed: list[dict] = []
+    for i, proj in enumerate(projects):
+        if on_progress is not None:
+            on_progress(i, total, proj.name)
+        try:
+            converted.append(
+                convert(proj, out_dir, legacy_ext=legacy_ext, dry_run=dry_run)
+            )
+        except Exception as exc:  # one bad song must not sink the whole batch
+            failed.append({"dir": str(proj), "name": proj.name, "error": str(exc)})
+    return {"mode": "batch", "total": total, "converted": converted, "failed": failed}
+
+
+def convert_any(
+    input_dir,
+    out_dir,
+    *,
+    legacy_ext: bool = False,
+    dry_run: bool = False,
+    on_progress=None,
+) -> dict:
+    """Convert one unpacked project, or every project under a parent folder.
+
+    Auto-detects: if ``input_dir`` is itself an unpacked arrangement it is
+    converted on its own; otherwise its immediate project subfolders are all
+    converted (batch). Returns a summary with ``mode``/``total``/``converted``/``failed``.
+    """
+    p = Path(input_dir)
+    if _discover_arrangements(p):
+        result = convert(p, out_dir, legacy_ext=legacy_ext, dry_run=dry_run)
+        return {"mode": "single", "total": 1, "converted": [result], "failed": []}
+    projects = _find_projects(p)
+    if not projects:
+        raise ConversionError(
+            f"no unpacked arrangements found in {p} (neither here nor in its subfolders)"
+        )
+    return batch_convert(
+        projects,
+        out_dir,
+        legacy_ext=legacy_ext,
+        dry_run=dry_run,
+        on_progress=on_progress,
+    )

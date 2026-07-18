@@ -68,8 +68,13 @@ published on every version tag.
 ## Usage
 
     psarc2feedpak <unpacked-folder> -o out/        # writes out/<song>.feedpak
+    psarc2feedpak <parent-of-folders> -o out/      # BATCH — every project inside, in one go
     psarc2feedpak <unpacked-folder> --legacy-ext   # older installs (.sloppak)
     psarc2feedpak song.psarc                        # explains how to unpack first
+
+Point it at one unpacked folder, or a **parent folder** full of them — it
+auto-detects and batch-converts the lot, skipping (and reporting) any that fail
+rather than aborting.
 
 ### GUI
 

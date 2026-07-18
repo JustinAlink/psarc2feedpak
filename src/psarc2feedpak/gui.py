@@ -20,7 +20,7 @@ from tkinter import filedialog, ttk
 from tkinter.scrolledtext import ScrolledText
 
 from psarc2feedpak.audio.normalize import WemConversionError
-from psarc2feedpak.convert.pipeline import ConversionError, convert
+from psarc2feedpak.convert.pipeline import ConversionError, convert_any
 
 _FEEDBACK_LIBRARY = Path.home() / ".local" / "share" / "feedback" / "library"
 _DEFAULT_OUT = Path.home() / "psarc-lab" / "out"
@@ -60,7 +60,7 @@ class App:
         )
         ttk.Label(
             frm,
-            text="Convert an UNPACKED Rocksmith arrangement folder into a feedBack .feedpak.",
+            text="Convert an unpacked arrangement — or a whole folder of them — into a feedBack .feedpak.",
             foreground="#666666",
         ).grid(row=1, column=0, columnspan=3, sticky="w", pady=(0, 8))
 
@@ -113,7 +113,7 @@ class App:
 
         self.root.after(120, self._drain)
         self._log(
-            "Pick an unpacked arrangement folder (what DLC Builder produced), then hit Convert."
+            "Pick an unpacked folder — or a parent folder of many — then hit Convert."
         )
 
     def _log(self, msg: str) -> None:
@@ -184,13 +184,23 @@ class App:
     def _worker(self, srcp: Path) -> None:
         try:
             out = Path(self.out_var.get().strip() or _DEFAULT_OUT)
-            result = convert(srcp, out, legacy_ext=self.legacy_var.get())
-            pak = Path(result["pak"])
+            summary = convert_any(
+                srcp,
+                out,
+                legacy_ext=self.legacy_var.get(),
+                on_progress=lambda i, total, name: self._log(
+                    f"  [{i + 1}/{total}] {name}"
+                ),
+            )
+            installed = 0
             if self.install_var.get():
                 _FEEDBACK_LIBRARY.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(pak, _FEEDBACK_LIBRARY / pak.name)
-                result["installed"] = str(_FEEDBACK_LIBRARY / pak.name)
-            self.q.put(("done", {"ok": True, "result": result}))
+                for r in summary["converted"]:
+                    pak = Path(r["pak"])
+                    shutil.copy2(pak, _FEEDBACK_LIBRARY / pak.name)
+                    installed += 1
+            summary["installed"] = installed
+            self.q.put(("done", {"ok": True, "summary": summary}))
         except (ConversionError, WemConversionError) as e:
             self.q.put(("done", {"ok": False, "error": str(e)}))
         except Exception as e:
@@ -203,16 +213,21 @@ class App:
         if not payload["ok"]:
             self._log(f"❌ {payload['error']}")
             return
-        r = payload["result"]
-        self._log(f"✅ Wrote {r['pak']}")
-        self._log(
-            f"   {r['title']} — {r['artist']}  ({r['duration']}s)  "
-            f"arrangements: {', '.join(a['id'] for a in r['arrangements'])}  "
-            f"cover: {'yes' if r['cover'] else 'no'}"
-        )
-        if r.get("installed"):
+        s = payload["summary"]
+        converted, failed = s["converted"], s["failed"]
+        if s["mode"] == "single":
+            r = converted[0]
             self._log(
-                f"   Installed into feedBack: {r['installed']} — launch feedBack to play it."
+                f"✅ {r['title']} — {r['artist']}  ({r['duration']}s)  →  {Path(r['pak']).name}"
+            )
+        else:
+            for f in failed:
+                self._log(f"  ✗ {f['name']}: {f['error']}")
+            tail = f", {len(failed)} failed" if failed else ""
+            self._log(f"✅ Batch: {len(converted)}/{s['total']} converted{tail}")
+        if s.get("installed"):
+            self._log(
+                f"   Installed {s['installed']} into feedBack — launch it to play."
             )
 
 
