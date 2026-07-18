@@ -45,6 +45,9 @@ def _locate_core() -> Path:
     env = os.environ.get("SLOPSMITH_DIR") or os.environ.get("FEEDBACK_CORE")
     if env:
         cands.append(Path(env))
+    # PyInstaller-bundled core (standalone .exe builds ship it as data).
+    if getattr(sys, "frozen", False):
+        cands.append(Path(getattr(sys, "_MEIPASS", ".")) / "feedback_core")
     here = Path(__file__).resolve()
     cands.append(here.parents[3].parent / "slopsmith")  # sibling of the repo
     cands.append(Path.home() / "Documents" / "Coding Projects" / "slopsmith")
@@ -56,15 +59,25 @@ def _locate_core() -> Path:
     )
 
 
-def _import_core():
+def _import_song():
+    """Import just the core's ``song`` module (stdlib-only) — all the convert
+    path needs. Kept separate from ``sloppak`` so a bundled .exe stays lean and
+    doesn't drag in sloppak's heavier transitive deps."""
     core = _locate_core()
     for p in (str(core), str(core / "lib")):
         if p not in sys.path:
             sys.path.insert(0, p)
     import song  # type: ignore
-    import sloppak  # type: ignore
 
     _patch_lefthand(song)
+    return song
+
+
+def _import_core():
+    """``song`` + ``sloppak`` — the latter only used by :func:`validate`."""
+    song = _import_song()
+    import sloppak  # type: ignore
+
     return song, sloppak
 
 
@@ -200,7 +213,7 @@ def _discover_arrangements(project: Path) -> list[tuple[str, str, str]]:
 def convert(
     project_dir, out_dir, *, legacy_ext: bool = False, dry_run: bool = False
 ) -> dict:
-    song, _sloppak = _import_core()
+    song = _import_song()
     project = Path(project_dir)
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)

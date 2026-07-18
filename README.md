@@ -43,6 +43,15 @@ short wrapper script — that stays on your machine, with your tools.
 
     pipx install .            # or, for development:  pip install -e .[dev]
 
+### Windows — no Python needed
+
+Download **`psarc2feedpak.exe`** (CLI) or **`psarc2feedpak-gui.exe`** (GUI) from
+the [Releases](https://github.com/JustinAlink/psarc2feedpak/releases) page. They're
+self-contained — the arrangement parser is bundled in. You still need `ffmpeg` on
+your PATH (cover art) and DLC Builder installed (its bundled `ww2ogg`/`revorb`
+supply the audio conversion, and it's what unpacks your `.psarc` in the first
+place). The exes are built by CI on every version tag (see `.github/workflows/release.yml`).
+
 ## Usage
 
     psarc2feedpak <unpacked-folder> -o out/        # writes out/<song>.feedpak
