@@ -43,14 +43,27 @@ short wrapper script — that stays on your machine, with your tools.
 
     pipx install .            # or, for development:  pip install -e .[dev]
 
-### Windows — no Python needed
+### Prebuilt binaries — no Python needed
 
-Download **`psarc2feedpak.exe`** (CLI) or **`psarc2feedpak-gui.exe`** (GUI) from
-the [Releases](https://github.com/JustinAlink/psarc2feedpak/releases) page. They're
-self-contained — the arrangement parser is bundled in. You still need `ffmpeg` on
-your PATH (cover art) and DLC Builder installed (its bundled `ww2ogg`/`revorb`
-supply the audio conversion, and it's what unpacks your `.psarc` in the first
-place). The exes are built by CI on every version tag (see `.github/workflows/release.yml`).
+Grab a self-contained binary for your platform from the
+[Releases](https://github.com/JustinAlink/psarc2feedpak/releases) page — the
+arrangement parser is bundled in. Each platform ships both the CLI and the GUI:
+
+| Platform | GUI binary |
+|---|---|
+| Windows | `psarc2feedpak-gui-windows-x64.exe` |
+| Linux | `psarc2feedpak-gui-linux-x64` (`chmod +x` first) |
+| macOS · Apple Silicon | `psarc2feedpak-gui-macos-arm64` |
+| macOS · Intel | `psarc2feedpak-gui-macos-x64` |
+
+- **macOS:** unsigned, so first launch needs `xattr -d com.apple.quarantine <file>`
+  (or right-click → Open), plus `chmod +x`.
+- **Linux/macOS:** `chmod +x` the file.
+- **All platforms** still need **`ffmpeg`** on PATH (cover art) and **DLC Builder**
+  to unpack your `.psarc` (it also supplies `ww2ogg`/`revorb`).
+
+Built by CI (`.github/workflows/release.yml`) — matrix over Windows/Linux/macOS,
+published on every version tag.
 
 ## Usage
 
