@@ -9,6 +9,7 @@ The core is pure XML parsing (no decryption); we locate it via ``$SLOPSMITH_DIR`
 or a sibling checkout. This module performs NO decryption: it consumes files an
 unpacker (e.g. DLC Builder) already produced from content you own.
 """
+
 from __future__ import annotations
 
 import json
@@ -121,7 +122,9 @@ def _parse_beats(root) -> list:
         t = eb.get("time")
         if t is None:
             continue
-        out.append({"time": round(float(t), 3), "measure": int(eb.get("measure", "-1"))})
+        out.append(
+            {"time": round(float(t), 3), "measure": int(eb.get("measure", "-1"))}
+        )
     return out
 
 
@@ -144,7 +147,13 @@ def _find_full_wem(project: Path) -> Path | None:
 
 
 def _find_cover_dds(project: Path) -> Path | None:
-    for pat in ("gfxassets/album_art/*_256.dds", "*_256.dds", "**/*_256.dds", "*.dds", "**/*.dds"):
+    for pat in (
+        "gfxassets/album_art/*_256.dds",
+        "*_256.dds",
+        "**/*_256.dds",
+        "*.dds",
+        "**/*.dds",
+    ):
         hits = sorted(project.glob(pat))
         if hits:
             return hits[0]
@@ -159,7 +168,8 @@ def _build_zip(src_dir: Path, zip_path: Path) -> None:
         for p in sorted(src_dir.rglob("*")):
             if p.is_file():
                 info = zipfile.ZipInfo(
-                    filename=p.relative_to(src_dir).as_posix(), date_time=(1980, 1, 1, 0, 0, 0)
+                    filename=p.relative_to(src_dir).as_posix(),
+                    date_time=(1980, 1, 1, 0, 0, 0),
                 )
                 info.compress_type = zipfile.ZIP_DEFLATED
                 info.external_attr = (0o644 & 0xFFFF) << 16
@@ -172,18 +182,24 @@ def _discover_arrangements(project: Path) -> list[tuple[str, str, str]]:
     if present:
         return present
     # Fallback: any *_RS2.xml or songs/arr/*.xml whose root is <song>.
-    for cand in sorted(project.glob("*_RS2.xml")) + sorted(project.glob("songs/arr/*.xml")):
+    for cand in sorted(project.glob("*_RS2.xml")) + sorted(
+        project.glob("songs/arr/*.xml")
+    ):
         try:
             if ET.parse(str(cand)).getroot().tag == "song":
                 aid = cand.stem.lower().replace("arr_", "").replace("_rs2", "")
-                present.append((cand.name, aid or cand.stem.lower(), (aid or "arr").title()))
+                present.append(
+                    (cand.name, aid or cand.stem.lower(), (aid or "arr").title())
+                )
         except ET.ParseError:
             continue
     return present
 
 
 # ── pipeline ─────────────────────────────────────────────────────────────────
-def convert(project_dir, out_dir, *, legacy_ext: bool = False, dry_run: bool = False) -> dict:
+def convert(
+    project_dir, out_dir, *, legacy_ext: bool = False, dry_run: bool = False
+) -> dict:
     song, _sloppak = _import_core()
     project = Path(project_dir)
     out_dir = Path(out_dir)

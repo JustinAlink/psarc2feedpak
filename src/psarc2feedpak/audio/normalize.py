@@ -5,6 +5,7 @@ This is plain audio *format* conversion (Wwise-Vorbis -> Ogg-Vorbis) — .wem is
 NOT encrypted, so this is not a decryption step. Uses ww2ogg + revorb, discovered
 from $WW2OGG/$REVORB, the PATH, or a local DLC Builder install.
 """
+
 from __future__ import annotations
 
 import os

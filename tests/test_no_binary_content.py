@@ -1,13 +1,29 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 """Guard: no copyrighted/binary content may ever be committed. See CONTENT_POLICY.md."""
+
 from __future__ import annotations
 
 import subprocess
 from pathlib import Path
 
 FORBIDDEN_EXT = {
-    ".psarc", ".sng", ".ogg", ".oga", ".mp3", ".wav", ".flac", ".m4a", ".opus",
-    ".wem", ".bnk", ".pck", ".dds", ".hsan", ".hson", ".feedpak", ".sloppak",
+    ".psarc",
+    ".sng",
+    ".ogg",
+    ".oga",
+    ".mp3",
+    ".wav",
+    ".flac",
+    ".m4a",
+    ".opus",
+    ".wem",
+    ".bnk",
+    ".pck",
+    ".dds",
+    ".hsan",
+    ".hson",
+    ".feedpak",
+    ".sloppak",
 }
 
 

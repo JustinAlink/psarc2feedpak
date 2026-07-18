@@ -6,6 +6,7 @@ unpacked arrangement into the open ``.feedpak`` format. It does NOT decrypt or
 circumvent any access control. If handed a still-packed ``.psarc`` it explains
 how to unpack it yourself — it will never fetch or run a decryptor.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -67,7 +68,9 @@ def _guide_unpack(path: Path) -> int:
     return 2
 
 
-def _convert(project_dir: Path, out_dir: Path, *, legacy_ext: bool, dry_run: bool) -> int:
+def _convert(
+    project_dir: Path, out_dir: Path, *, legacy_ext: bool, dry_run: bool
+) -> int:
     """Convert an unpacked arrangement folder → .feedpak."""
     from psarc2feedpak.audio.normalize import WemConversionError
     from psarc2feedpak.convert.pipeline import ConversionError, convert
@@ -108,15 +111,21 @@ def main(argv: list[str] | None = None) -> int:
         help="an UNPACKED arrangement folder (or a .psarc, which is explained, not decrypted)",
     )
     parser.add_argument(
-        "-o", "--output", type=Path, default=Path("out"),
+        "-o",
+        "--output",
+        type=Path,
+        default=Path("out"),
         help="output directory (default: ./out)",
     )
     parser.add_argument(
-        "--legacy-ext", action="store_true",
+        "--legacy-ext",
+        action="store_true",
         help="write the legacy .sloppak extension instead of .feedpak",
     )
     parser.add_argument(
-        "--dry-run", action="store_true", help="inspect without writing output",
+        "--dry-run",
+        action="store_true",
+        help="inspect without writing output",
     )
     args = parser.parse_args(argv)
 
