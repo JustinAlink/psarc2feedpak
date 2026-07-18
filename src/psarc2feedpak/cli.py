@@ -68,14 +68,31 @@ def _guide_unpack(path: Path) -> int:
 
 
 def _convert(project_dir: Path, out_dir: Path, *, legacy_ext: bool, dry_run: bool) -> int:
-    """Convert an unpacked arrangement folder → .feedpak.
+    """Convert an unpacked arrangement folder → .feedpak."""
+    from psarc2feedpak.audio.normalize import WemConversionError
+    from psarc2feedpak.convert.pipeline import ConversionError, convert
 
-    The reader/model/writer pipeline lands milestone by milestone (M1–M7) once
-    it can be validated against a real, user-owned unpacked sample.
-    """
-    raise NotImplementedError(
-        "conversion pipeline not implemented yet — this is the M0 scaffold"
+    try:
+        result = convert(project_dir, out_dir, legacy_ext=legacy_ext, dry_run=dry_run)
+    except (ConversionError, WemConversionError) as exc:
+        print(f"psarc2feedpak: {exc}", file=sys.stderr)
+        return 1
+
+    if dry_run:
+        print(f"[dry-run] would write: {result['would_write']}")
+        print(
+            f"  title={result['title']!r}  duration={result['duration']}s  "
+            f"arrangements={', '.join(result['arrangements'])}"
+        )
+        return 0
+
+    print(f"wrote {result['pak']}")
+    print(f"  {result['title']!r} — {result['artist']!r}  ({result['duration']}s)")
+    print(
+        f"  arrangements: {', '.join(a['id'] for a in result['arrangements'])}"
+        f"  cover: {'yes' if result['cover'] else 'no'}"
     )
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -118,11 +135,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 2
 
-    try:
-        return _convert(src, args.output, legacy_ext=args.legacy_ext, dry_run=args.dry_run)
-    except NotImplementedError as exc:
-        print(f"psarc2feedpak: {exc}", file=sys.stderr)
-        return 3
+    return _convert(src, args.output, legacy_ext=args.legacy_ext, dry_run=args.dry_run)
 
 
 if __name__ == "__main__":
