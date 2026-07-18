@@ -49,12 +49,22 @@ short wrapper script — that stays on your machine, with your tools.
     psarc2feedpak <unpacked-folder> --legacy-ext   # older installs (.sloppak)
     psarc2feedpak song.psarc                        # explains how to unpack first
 
+## Requirements
+
+- **Python 3.10+** and the **feedBack core** on disk (this reuses its proven
+  RS2014 parser rather than re-implementing it). Point `$SLOPSMITH_DIR` at a
+  [`got-feedback/feedback`](https://github.com/got-feedback/feedback) checkout.
+- **ffmpeg** (album-art transcode) and **ww2ogg + revorb** (Wwise `.wem` → Ogg
+  Vorbis; both are bundled with DLC Builder, or set `$WW2OGG` / `$REVORB`).
+
 ## Status
 
-**Scaffold (milestone M0).** The container reader, `.sng`/manifest parsers,
-intermediate model, and `.feedpak` writer land milestone by milestone. Format
-details are validated against a real, user-owned sample before any milestone is
-called done. Nothing here parses copyrighted bytes yet.
+**Working.** Converts an unpacked arrangement (lead/rhythm/bass) into a
+`.feedpak` that loads in feedBack with the full chart intact — notes, chords,
+techniques, the per-phrase difficulty merge, beats, sections, fingering, audio,
+and cover art — validated by round-tripping through feedBack's own loader with
+zero warnings. Vocals, tones, and bend-heavy fidelity are the next items. No
+copyrighted bytes are parsed or shipped by this repo.
 
 ## Acceptable use
 
