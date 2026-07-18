@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "psarc2feedpak"
-version = "0.1.1"
+version = "0.1.2"
 description = "Convert PSARC archives you own into the open .feedpak interoperability format."
 readme = "README.md"
 requires-python = ">=3.10"
