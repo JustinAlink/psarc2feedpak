@@ -20,7 +20,6 @@ jobs:
           - { os: windows-latest, asset: windows-x64, ext: ".exe" }
           - { os: ubuntu-latest, asset: linux-x64, ext: "" }
           - { os: macos-latest, asset: macos-arm64, ext: "" }
-          - { os: macos-13, asset: macos-x64, ext: "" }
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4

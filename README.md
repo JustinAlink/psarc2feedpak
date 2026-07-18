@@ -54,10 +54,10 @@ arrangement parser is bundled in. Each platform ships both the CLI and the GUI:
 | Windows | `psarc2feedpak-gui-windows-x64.exe` |
 | Linux | `psarc2feedpak-gui-linux-x64` (`chmod +x` first) |
 | macOS · Apple Silicon | `psarc2feedpak-gui-macos-arm64` |
-| macOS · Intel | `psarc2feedpak-gui-macos-x64` |
 
-- **macOS:** unsigned, so first launch needs `xattr -d com.apple.quarantine <file>`
-  (or right-click → Open), plus `chmod +x`.
+- **macOS:** the binary is Apple Silicon and unsigned — first launch needs
+  `xattr -d com.apple.quarantine <file>` (or right-click → Open), plus `chmod +x`.
+  Intel Macs: `pipx install` from source.
 - **Linux/macOS:** `chmod +x` the file.
 - **All platforms** still need **`ffmpeg`** on PATH (cover art) and **DLC Builder**
   to unpack your `.psarc` (it also supplies `ww2ogg`/`revorb`).
