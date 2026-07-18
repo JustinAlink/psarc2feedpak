@@ -49,6 +49,14 @@ short wrapper script — that stays on your machine, with your tools.
     psarc2feedpak <unpacked-folder> --legacy-ext   # older installs (.sloppak)
     psarc2feedpak song.psarc                        # explains how to unpack first
 
+### GUI
+
+Prefer buttons to a terminal? Run `psarc2feedpak-gui` (Tkinter, ships with
+Python — on some Linux distros install `python3-tkinter`). Pick the unpacked
+folder, tick **Install into feedBack library**, hit **Convert**, and launch
+feedBack. Same rule as the CLI: it converts folders, it does not decrypt a raw
+`.psarc`.
+
 ## Requirements
 
 - **Python 3.10+** and the **feedBack core** on disk (this reuses its proven

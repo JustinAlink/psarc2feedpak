@@ -19,6 +19,9 @@ Homepage = "https://github.com/JustinAlink/psarc2feedpak"
 [project.scripts]
 psarc2feedpak = "psarc2feedpak.cli:main"
 
+[project.gui-scripts]
+psarc2feedpak-gui = "psarc2feedpak.gui:main"
+
 [project.optional-dependencies]
 dev = ["pytest>=8", "ruff>=0.4", "mypy>=1.10"]
 
