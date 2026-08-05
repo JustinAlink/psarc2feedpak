@@ -35,3 +35,6 @@ venv/
 .ruff_cache/
 out/
 tmp/
+
+# Private working doc, never published
+CONTEXT.md
