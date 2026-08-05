@@ -12,7 +12,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
-      - run: pip install ruff mypy
+      # Pinned deliberately. These were unpinned, so ruff 0.16 shipped new
+      # default rules (BLE001, PLW1510, RUF022) and turned CI red on a commit
+      # that changed nothing but .gitignore. A linter that can fail a build
+      # without a code change is not a useful signal. Bump this on purpose,
+      # with the resulting fixes in the same commit.
+      - run: pip install ruff==0.14.0 mypy==1.14.1
       - run: ruff check src tests
       - run: ruff format --check src tests
       - run: mypy src || true   # advisory until types are filled in
