@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -33,6 +34,13 @@ _ARR_FILES = [
     ("arr_rhythm_RS2.xml", "rhythm", "Rhythm"),
     ("arr_bass_RS2.xml", "bass", "Bass"),
 ]
+
+# Roles we can recognise in an arrangement filename, in pack order.
+_ROLES = ("lead", "rhythm", "bass", "combo")
+
+# Ceiling on how many XML files the layout probe will open. It exists to find
+# arrangements another unpacker nested, not to trawl an arbitrary tree.
+_MAX_XML_PROBE = 200
 
 
 class ConversionError(RuntimeError):
@@ -190,22 +198,80 @@ def _build_zip(src_dir: Path, zip_path: Path) -> None:
                 zf.writestr(info, p.read_bytes())
 
 
+def _root_tag(path: Path) -> str | None:
+    """The document's root tag, without parsing the whole file — charts run to
+    megabytes and classifying one only needs its first start event."""
+    try:
+        for _event, elem in ET.iterparse(str(path), events=("start",)):
+            return str(elem.tag)
+    except (ET.ParseError, OSError):
+        return None
+    return None
+
+
+def _role_of(stem: str) -> str | None:
+    """Map a filename stem onto a known arrangement role, so the Toolkit's
+    ``bromptoncocktail_bass`` yields ``bass`` rather than a per-song id."""
+    s = stem.lower()
+    for role in _ROLES:
+        if re.search(rf"(?:^|[_\-\s]){role}\d*(?:[_\-\s]|$)", s):
+            return role
+    return None
+
+
 def _discover_arrangements(project: Path) -> list[tuple[str, str, str]]:
+    """Find the instrumental arrangements in an unpacked project.
+
+    Returns ``(path_relative_to_project, id, display_name)``. The path is
+    relative rather than a bare filename because unpackers disagree on layout:
+    DLC Builder drops ``arr_lead_RS2.xml`` beside the audio, while the
+    Rocksmith Toolkit nests ``songs/arr/<song>_lead.xml``. Returning just the
+    name silently broke every nested layout — the caller resolved it against
+    the project root and died on FileNotFoundError.
+    """
     present = [(fn, aid, nm) for (fn, aid, nm) in _ARR_FILES if (project / fn).exists()]
     if present:
         return present
-    # Fallback: any *_RS2.xml or songs/arr/*.xml whose root is <song>.
-    for cand in sorted(project.glob("*_RS2.xml")) + sorted(
-        project.glob("songs/arr/*.xml")
-    ):
-        try:
-            if ET.parse(str(cand)).getroot().tag == "song":
-                aid = cand.stem.lower().replace("arr_", "").replace("_rs2", "")
-                present.append(
-                    (cand.name, aid or cand.stem.lower(), (aid or "arr").title())
-                )
-        except ET.ParseError:
+
+    # Any other unpacker: take XML whose root element is <song>, nearest
+    # first. That check is also what filters out the vocals (<vocals>) and
+    # showlights (<showlights>) files sitting in the same folder.
+    seen: set[Path] = set()
+    cands: list[Path] = []
+    for pattern in ("*.xml", "songs/arr/*.xml", "**/*.xml"):
+        for cand in sorted(project.glob(pattern)):
+            resolved = cand.resolve()
+            if resolved in seen:
+                continue
+            seen.add(resolved)
+            cands.append(cand)
+            if len(cands) >= _MAX_XML_PROBE:
+                break
+        if len(cands) >= _MAX_XML_PROBE:
+            break
+
+    used: set[str] = set()
+    for cand in cands:
+        if _root_tag(cand) != "song":
             continue
+        aid = _role_of(cand.stem) or cand.stem.lower().replace("arr_", "").replace(
+            "_rs2", ""
+        )
+        aid = aid or cand.stem.lower()
+        base, n = aid, 2
+        while aid in used:  # two files claiming one role must both survive
+            aid, n = f"{base}{n}", n + 1
+        used.add(aid)
+        present.append(
+            (cand.relative_to(project).as_posix(), aid, aid.replace("_", " ").title())
+        )
+
+    # Lead first: convert() hangs the song-level beats and sections off
+    # whichever arrangement lands at index 0.
+    order = {role: i for i, role in enumerate(_ROLES)}
+    present.sort(
+        key=lambda a: (order.get(a[1].rstrip("0123456789"), len(_ROLES)), a[1])
+    )
     return present
 
 
