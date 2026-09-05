@@ -199,7 +199,7 @@ def _build_zip(src_dir: Path, zip_path: Path) -> None:
 
 
 def _root_tag(path: Path) -> str | None:
-    """The document's root tag, without parsing the whole file — charts run to
+    """The document's root tag, without parsing the whole file. Charts run to
     megabytes and classifying one only needs its first start event."""
     try:
         for _event, elem in ET.iterparse(str(path), events=("start",)):
@@ -226,7 +226,7 @@ def _discover_arrangements(project: Path) -> list[tuple[str, str, str]]:
     relative rather than a bare filename because unpackers disagree on layout:
     DLC Builder drops ``arr_lead_RS2.xml`` beside the audio, while the
     Rocksmith Toolkit nests ``songs/arr/<song>_lead.xml``. Returning just the
-    name silently broke every nested layout — the caller resolved it against
+    name silently broke every nested layout: the caller resolved it against
     the project root and died on FileNotFoundError.
     """
     present = [(fn, aid, nm) for (fn, aid, nm) in _ARR_FILES if (project / fn).exists()]
